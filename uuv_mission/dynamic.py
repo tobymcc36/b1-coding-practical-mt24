@@ -23,15 +23,11 @@ class Submarine:
     def transition(self, action: float, disturbance: float):
         self.pos_x += self.vel_x * self.dt
 
-        print(f"Before update: pos_y={self.pos_y:.4f}, vel_y={self.vel_y:.4f}")
-
         self.pos_y += self.vel_y * self.dt
 
         force_y = -self.drag * self.vel_y + self.actuator_gain * (action + disturbance)
         acc_y = force_y / self.mass
         self.vel_y += acc_y * self.dt
-
-        print(f"After update: pos_y={self.pos_y:.4f}, vel_y={self.vel_y:.4f}, action={action:.4f}, disturbance={disturbance:.4f}")
 
     def get_depth(self) -> float:
         return self.pos_y
@@ -87,7 +83,6 @@ class Mission:
 
 class ClosedLoop:
     def __init__(self, plant: Submarine, controller):
-        print("ClosedLoop instance created")
         sys.stdout.flush()
         self.plant = plant
         self.controller = controller
@@ -95,7 +90,6 @@ class ClosedLoop:
     def simulate(self,  mission: Mission, disturbances: np.ndarray) -> Trajectory:
 
         import sys
-        print("Starting simulation...")
         sys.stdout.flush()
 
         T = len(mission.reference)
@@ -108,8 +102,6 @@ class ClosedLoop:
         
         # Reset controller
         self.controller.reset()
-
-        print("Before loop")
         sys.stdout.flush()
 
         for t in range(T):
@@ -121,18 +113,6 @@ class ClosedLoop:
             # Compute control action
             action_t = self.controller(reference_t, observation_t)
 
-            # Optional: clamp control signal
-            # action_t = np.clip(action_t, -5, 5)
-
-            # Log data
-            error = reference_t - observation_t
-            vel_y = self.plant.vel_y
-            pos_y = self.plant.pos_y
-            print(f"[t={t:03d}] Ref={reference_t:.2f}, Obs={observation_t:.2f}, "
-                f"Error={error:.2f}, Ctrl={action_t:.2f}, "
-                f"VelY={vel_y:.2f}, PosY={pos_y:.2f}")
-            
-            sys.stdout.flush()
             # Store and apply action
             actions[t] = action_t
             self.plant.transition(action_t, disturbances[t])
@@ -143,10 +123,6 @@ class ClosedLoop:
         
 
     def simulate_with_random_disturbances(self, mission: Mission, variance: float = 0.5) -> Trajectory:
-        print("Calling simulate_with_random_disturbances...")
-        import sys
-        sys.stdout.flush()
         disturbances = np.random.normal(0, variance, len(mission.reference))
         return self.simulate(mission, disturbances)
-        disturbances = np.random.normal(0, variance, len(mission.reference))
-        return self.simulate(mission, disturbances)
+   
